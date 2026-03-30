@@ -50,33 +50,46 @@ input {
 }
 
 .upload-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 140px;
-  padding: 16px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 156px;
+  padding: 20px;
   border: 2px dashed rgba(37, 86, 132, 0.28);
   border-radius: 22px;
   cursor: pointer;
   text-align: center;
-  background:
-    linear-gradient(135deg, rgba(244, 248, 255, 0.92), rgba(255, 248, 239, 0.82));
+  background: linear-gradient(135deg, rgba(244, 248, 255, 0.92), rgba(255, 248, 239, 0.82));
   color: #1f4f7b;
-  font-size: 1.05rem;
-  font-weight: 700;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
-    border-color 160ms ease;
+    border-color 160ms ease,
+    background 160ms ease;
 }
 
-.upload-box:hover {
+.upload-box span {
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.upload-box small {
+  color: #5e7690;
+  font-size: 0.94rem;
+}
+
+.upload-box:hover,
+.upload-box.is-drag-over {
   transform: translateY(-1px);
-  border-color: rgba(37, 86, 132, 0.42);
+  border-color: rgba(37, 86, 132, 0.48);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.75),
     0 14px 28px rgba(49, 83, 118, 0.12);
+}
+
+.upload-box.is-drag-over {
+  background: linear-gradient(135deg, rgba(236, 246, 255, 0.96), rgba(255, 242, 224, 0.88));
 }
 
 .upload-box input {
@@ -133,7 +146,8 @@ input {
 
 .section-head span,
 .empty-state,
-.file-list span {
+.file-meta span,
+.modal-head p {
   color: #647688;
 }
 
@@ -148,12 +162,23 @@ input {
 .file-list li {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
   padding: 14px 16px;
   border: 1px solid rgba(22, 32, 42, 0.06);
   border-radius: 18px;
   background: rgba(245, 248, 252, 0.92);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.file-meta {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.file-name {
+  overflow-wrap: anywhere;
 }
 
 .queue-footer {
@@ -177,12 +202,37 @@ input {
 }
 
 .more-button:hover,
-.close-button:hover {
+.close-button:hover,
+.remove-button:hover {
   transform: translateY(-1px);
+}
+
+.more-button:hover,
+.close-button:hover {
   border-color: rgba(39, 73, 104, 0.24);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.68),
     0 12px 24px rgba(39, 73, 104, 0.12);
+}
+
+.remove-button {
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  border: 1px solid rgba(186, 70, 70, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 244, 244, 0.92);
+  color: #ad3d3d;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.remove-button:hover {
+  background: rgba(255, 236, 236, 0.98);
+  border-color: rgba(186, 70, 70, 0.24);
 }
 
 .empty-state {
@@ -224,11 +274,6 @@ input {
   margin: 0;
 }
 
-.modal-head p {
-  margin-top: 4px;
-  color: #647688;
-}
-
 .modal-file-list {
   max-height: 56vh;
   padding-right: 6px;
@@ -242,27 +287,25 @@ input {
   }
 
   .upload-panel,
-  .queue-card {
+  .queue-card,
+  .modal-card {
     border-radius: 22px;
   }
 
-  .upload-panel {
-    padding: 18px;
-  }
-
-  .queue-card {
+  .upload-panel,
+  .queue-card,
+  .modal-card {
     padding: 18px;
   }
 
   .section-head,
   .file-list li,
   .modal-head {
-    flex-direction: column;
     align-items: flex-start;
   }
 
-  .modal-card {
-    padding: 18px;
-    border-radius: 22px;
+  .file-list li,
+  .modal-head {
+    flex-direction: column;
   }
 }
