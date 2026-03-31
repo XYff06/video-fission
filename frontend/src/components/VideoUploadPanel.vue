@@ -1,5 +1,6 @@
 <script setup>
 import {computed, ref} from 'vue'
+import ProcessingResults from './ProcessingResults.vue'
 
 // 后端服务地址从vite的环境变量里读取，对应配置文件: frontend/.env
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
@@ -7,6 +8,10 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const files = ref([])
 // 控制"开始处理"按钮的提交中状态，避免重复点击
 const isSubmitting = ref(false)
+// 保存后端返回的处理结果，交给结果组件展示
+const processResult = ref(null)
+// 保存请求或后端失败时的错误消息
+const submitError = ref('')
 // 控制"展示更多"弹窗是否打开
 const isQueueModalOpen = ref(false)
 // 拖拽文件进入上传框时，用来控制高亮态
@@ -108,15 +113,24 @@ async function submitVideos() {
     return
   }
   isSubmitting.value = true
+  submitError.value = ''
+  processResult.value = null
   const formData = new FormData()
   files.value.forEach((file) => {
     formData.append('videos', file)
   })
   try {
-    await fetch(`${apiBaseUrl}/api/process`, {
+    const response = await fetch(`${apiBaseUrl}/api/process`, {
       method: 'POST',
       body: formData
     })
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.message || '视频处理失败')
+    }
+    processResult.value = data
+  } catch (error) {
+    submitError.value = error instanceof Error ? error.message : '视频处理失败'
   } finally {
     isSubmitting.value = false
   }
@@ -125,57 +139,63 @@ async function submitVideos() {
 
 <template>
   <main class="page-shell">
-    <section class="upload-panel">
-      <!-- 上传入口 -->
-      <label
-          class="upload-box"
-          :class="{ 'is-drag-over': isDragOver }"
-          @dragenter="onDragEnter"
-          @dragover="onDragOver"
-          @dragleave="onDragLeave"
-          @drop="onDrop"
-      >
-        <span>上传视频文件</span>
-        <small>点击此处选择视频文件进行上传/拖拽视频文件到此处进行上传</small>
-        <input type="file" accept="video/*" multiple @change="onFileChange"/>
-      </label>
+    <div class="workspace-grid">
+      <section class="upload-panel">
+        <!-- 上传入口 -->
+        <label
+            class="upload-box"
+            :class="{ 'is-drag-over': isDragOver }"
+            @dragenter="onDragEnter"
+            @dragover="onDragOver"
+            @dragleave="onDragLeave"
+            @drop="onDrop"
+        >
+          <span>上传视频文件</span>
+          <small>点击此处选择视频文件进行上传/拖拽视频文件到此处进行上传</small>
+          <input type="file" accept="video/*" multiple @change="onFileChange"/>
+        </label>
 
-      <!-- 当没有文件时禁用按钮，提交中显示处理中状态 -->
-      <button class="submit-button" :disabled="!files.length || isSubmitting" @click="submitVideos">
-        {{ isSubmitting ? '处理中...' : '开始处理' }}
-      </button>
+        <!-- 当没有文件时禁用按钮，提交中显示处理中状态 -->
+        <button class="submit-button" :disabled="!files.length || isSubmitting" @click="submitVideos">
+          {{ isSubmitting ? '处理中...' : '开始处理' }}
+        </button>
 
-      <!-- 上传队列卡片，主界面只展示前3个文件 -->
-      <section class="queue-card">
-        <div class="section-head">
-          <h2>上传队列</h2>
-          <span>{{ files.length }} 个文件</span>
-        </div>
+        <!-- 上传队列卡片，主界面只展示前3个文件 -->
+        <section class="queue-card">
+          <div class="section-head">
+            <h2>上传队列</h2>
+            <span>{{ files.length }} 个文件</span>
+          </div>
 
-        <!-- 队列预览，每项都可以单独删除 -->
-        <ul v-if="files.length" class="file-list">
-          <li v-for="file in visibleFiles" :key="getFileId(file)">
-            <div class="file-meta">
-              <strong class="file-name">{{ file.name }}</strong>
-              <span>{{ (file.size / 1024 / 1024).toFixed(2) }} MB</span>
-            </div>
+          <!-- 队列预览，每项都可以单独删除 -->
+          <ul v-if="files.length" class="file-list">
+            <li v-for="file in visibleFiles" :key="getFileId(file)">
+              <div class="file-meta">
+                <strong class="file-name">{{ file.name }}</strong>
+                <span>{{ (file.size / 1024 / 1024).toFixed(2) }} MB</span>
+              </div>
 
-            <button class="remove-button" type="button" @click="removeFile(getFileId(file))">
-              删除
-            </button>
-          </li>
-        </ul>
+              <button class="remove-button" type="button" @click="removeFile(getFileId(file))">
+                删除
+              </button>
+            </li>
+          </ul>
 
-        <!-- 文件数量超过3个时，用弹窗承载完整列表 -->
-        <div v-if="hasMoreFiles" class="queue-footer">
-          <button class="more-button" type="button" @click="openQueueModal">展示更多</button>
-        </div>
+          <!-- 文件数量超过3个时，用弹窗承载完整列表 -->
+          <div v-if="hasMoreFiles" class="queue-footer">
+            <button class="more-button" type="button" @click="openQueueModal">展示更多</button>
+          </div>
 
-        <!-- 队列为空时显示空状态文案 -->
-        <p v-else-if="!files.length" class="empty-state">暂无视频文件</p>
+          <!-- 队列为空时显示空状态文案 -->
+          <p v-else-if="!files.length" class="empty-state">暂无视频文件</p>
+        </section>
       </section>
-    </section>
-
+      <ProcessingResults
+          :result="processResult"
+          :error="submitError"
+          :source-files="files"
+      />
+    </div>
     <!-- 完整上传队列弹窗，点击遮罩空白处可以关闭 -->
     <div v-if="isQueueModalOpen" class="modal-backdrop" @click.self="closeQueueModal">
       <section class="modal-card" role="dialog" aria-modal="true" aria-label="上传队列">
