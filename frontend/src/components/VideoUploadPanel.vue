@@ -1,6 +1,6 @@
 <script setup>
 import {computed, ref} from 'vue'
-import ProcessingResults from './ProcessingResults.vue'
+import VideoSplitResultPanel from './VideoSplitResultPanel.vue'
 
 // 后端服务地址从vite的环境变量里读取，对应配置文件: frontend/.env
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
@@ -190,7 +190,7 @@ async function submitVideos() {
           <p v-else-if="!files.length" class="empty-state">暂无视频文件</p>
         </section>
       </section>
-      <ProcessingResults
+      <VideoSplitResultPanel
           :result="processResult"
           :error="submitError"
           :source-files="files"
